@@ -1,0 +1,44 @@
+#ifndef CACHE_STRUCT_H
+#define CACHE_STRUCT_H
+
+#include <stdint.h>
+#include "def.h"
+
+struct cache_line
+{
+public:
+    bool valid, dirty;
+    unsigned long long tag;
+    unsigned char bytes[MAX_LINE_SIZE];
+    unsigned long long counter;
+};
+
+struct cache_set
+{
+public:
+    cache_line lines[MAX_LINE_NUM];
+};
+
+class cache_struct
+{
+public:
+    int set_num, line_num, line_size;
+    cache_set sets[MAX_SET_NUM];
+
+    cache_struct();
+    ~cache_struct() { }
+    void set_config(int arg_size, int arg_associativity, int arg_set_num);
+
+    void find(uint64_t addr, int &hit, int &set, int &line, int &byte);
+    void put_line(uint64_t addr, int set, int line);
+
+private:
+    int tag_bits, index_bits, offset_bits;
+
+    unsigned long long get_tag(uint64_t addr);
+    unsigned long long get_index(uint64_t addr);
+    unsigned long long get_offset(uint64_t addr);
+    unsigned long long getbit(unsigned long long num, int s,int e);
+};
+
+#endif // CACHE_STRUCT_H

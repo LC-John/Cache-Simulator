@@ -1,0 +1,86 @@
+#include "cache_struct.h"
+
+#define NULL 0
+
+cache_struct::cache_struct()
+{
+    line_num = set_num = line_size = 0;
+    tag_bits = index_bits = offset_bits = 0;
+}
+
+void cache_struct::set_config(int arg_size, int arg_associativity, int arg_set_num)
+{
+    unsigned int tmp;
+
+    line_num = arg_associativity;
+    set_num = arg_set_num;
+    line_size = arg_size / arg_associativity / arg_set_num;
+    for (offset_bits = 0, tmp = line_size; tmp > 0; tmp >>= 1, offset_bits++);
+    for (index_bits = 0, tmp = set_num; tmp > 0; tmp >>= 1, index_bits++);
+    tag_bits = 64 - offset_bits - index_bits;
+
+    for (int i = 0; i < set_num; i++)
+        for (int j = 0; j < line_num; j++)
+        {
+            sets[i].lines[j].valid = false;
+            sets[i].lines[j].dirty = false;
+            sets[i].lines[j].counter = 0;
+        }
+}
+
+void cache_struct::find(uint64_t addr,
+                        int &hit, int &set,
+                        int &line, int &byte)
+{
+    unsigned long long tag = get_tag(addr);
+    unsigned long long index = get_index(addr);
+    unsigned long long offset = get_offset(addr);
+
+    for (int i = 0; i < line_num; i++)
+        if (sets[index].lines[i].tag == tag
+            && sets[index].lines[i].valid)
+        {
+            hit = 1;
+            set = index;
+            line = i;
+            byte = offset;
+            for (int j = 0; j < line_num; j++)
+                if (j != line)
+                    sets[index].lines[j].counter++;
+                else
+                    sets[index].lines[j].counter = 0;
+            break;
+        }
+    set = index;
+    hit = 0;
+    return;
+}
+
+void cache_struct::put_line(uint64_t addr, )
+{
+    unsigned long long tag = get_tag(addr);
+    sets[set].lines[line].valid = true;
+    sets[set].lines[line].counter = 0;
+    sets[set].lines[line].tag = tag;
+}
+
+unsigned long long cache_struct::get_tag(uint64_t addr)
+{
+    return getbit(addr, offset_bits+index_bits, offset_bits+index_bits+tag_bits-1);
+}
+
+unsigned long long cache_struct::get_index(uint64_t addr)
+{
+    return getbit(addr, offset_bits, offset_bits+index_bits-1);
+}
+
+unsigned long long cache_struct::get_offset(uint64_t addr)
+{
+    return getbit(addr, 0, offset_bits-1);
+}
+
+unsigned long long cache_struct::getbit(unsigned long long num,
+                                        int s,int e)
+{
+    return (unsigned long long)(((unsigned long long)num << (63 - e)) >> (63 - e + s));
+}
