@@ -14,7 +14,7 @@ MIT License
 
 **How to build**
 
-1. Simply download this repo by clicking the `DOWNLOAD` button or call `git git@github.com:LC-John/RISCV-Simulator.git` in command line.
+1. Simply download this repo by clicking the `DOWNLOAD` button or call `git git@github.com:LC-John/Cache-Simulator.git` in command line.
 
 2. Use QtCreator or other IDEs to open the `.pro` project file.
 
